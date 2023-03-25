@@ -4,6 +4,7 @@ import Head from "next/head";
 import { api, type RouterOutputs } from "@/utils/api";
 import { SignIn, SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
 
+import { LoadingPage } from "@/components/Loading";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
@@ -58,12 +59,28 @@ const PostView = (props: PostWithUser) => {
   );
 };
 
-const Home: NextPage = () => {
-  const user = useUser();
-  const { data, isLoading } = api.posts.getAll.useQuery();
+const Feed = () => {
+  const { data, isLoading: isPostsLoading } = api.posts.getAll.useQuery();
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isPostsLoading) return <LoadingPage />;
   if (!data) return <div>Something went wrong</div>;
+
+  return (
+    <div className="flex flex-col">
+      {data?.map((post) => (
+        <PostView key={post.post.id} {...post} />
+      ))}
+    </div>
+  );
+};
+
+const Home: NextPage = () => {
+  const { isLoaded: isUserLoaded, isSignedIn } = useUser();
+
+  // start fetching asap
+  api.posts.getAll.useQuery();
+
+  if (!isUserLoaded) return <div></div>;
 
   return (
     <>
@@ -76,19 +93,15 @@ const Home: NextPage = () => {
         <div className="h-full w-full border-x border-slate-400 md:max-w-2xl">
           <div className="border-b border-slate-400 p-4">
             <CreatePostWizard />
-            {!user.isSignedIn && (
+            {!isSignedIn && (
               <div className="flex justify-center">
                 <SignInButton mode="modal" />
               </div>
             )}
-            {!!user.isSignedIn && <SignOutButton />}
+            {!!isSignedIn && <SignOutButton />}
           </div>
           <SignIn path="/sign-in" routing="path" signUpUrl="/sign-up" />
-          <div className="flex flex-col">
-            {data?.map((post) => (
-              <PostView key={post.post.id} {...post} />
-            ))}
-          </div>
+          <Feed />
         </div>
       </main>
     </>
