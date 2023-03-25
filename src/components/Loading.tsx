@@ -1,4 +1,4 @@
-const LoadingSpinner = ({ size = 40 }: { size?: number }) => {
+export const LoadingSpinner = ({ size = 40 }: { size?: number }) => {
   return (
     <div role="status">
       <svg
