@@ -8,11 +8,23 @@ import { LoadingPage } from "@/components/Loading";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
+import { useState } from "react";
 
 dayjs.extend(relativeTime);
 
 const CreatePostWizard = () => {
   const { user } = useUser();
+  const [input, setInput] = useState("");
+
+  const ctx = api.useContext();
+
+  const { mutate: createPost, isLoading: isPosting } =
+    api.posts.create.useMutation({
+      onSuccess: () => {
+        setInput("");
+        void ctx.posts.getAll.invalidate();
+      },
+    });
 
   if (!user) return null;
 
@@ -28,7 +40,12 @@ const CreatePostWizard = () => {
       <input
         placeholder="Type some emojis!"
         className="grow bg-transparent outline-none"
+        value={input}
+        type="text"
+        onChange={(e) => setInput(e.target.value)}
+        disabled={isPosting}
       />
+      <button onClick={() => createPost({ content: input })}>Post</button>
     </div>
   );
 };
@@ -53,7 +70,7 @@ const PostView = (props: PostWithUser) => {
             post.createdAt
           ).fromNow()}`}</span>
         </div>
-        <span>{post.content}</span>
+        <span className="text-xl">{post.content}</span>
       </div>
     </div>
   );
